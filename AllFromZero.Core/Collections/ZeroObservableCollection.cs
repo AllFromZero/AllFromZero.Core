@@ -2,7 +2,7 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
 
-namespace Zero.Core.Collections
+namespace AllFromZero.Core.Collections
 {
     /// <summary>
     /// 扩展的 ObservableCollection，支持批量添加元素并只触发一次集合变更通知。

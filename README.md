@@ -1,2 +1,2 @@
-# Zero.Core
+# AllFromZero.Core
 C#基础库

@@ -5,15 +5,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-    <Title>Zero.Core</Title>
-    <Description>Zero.Core是一个通用的C#库，基于.net开发</Description>
+    <Title>AllFromZero.Core</Title>
+    <Description>AllFromZero.Core是一个通用的C#库，基于.net开发</Description>
     <Copyright>copyright @ AllFromZero 2026</Copyright>
-    <PackageProjectUrl>https://github.com/AllFromZero/Zero.Core.git</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/AllFromZero/AllFromZero.Core.git</PackageProjectUrl>
     <PackageIcon>零.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <RepositoryUrl>https://github.com/AllFromZero/Zero.Core.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/AllFromZero/AllFromZero.Core.git</RepositoryUrl>
     <PackageTags>C#,.net</PackageTags>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <Company>AllFromZero</Company>
+    <Authors>AllFromZero</Authors>
   </PropertyGroup>
 
   <ItemGroup>

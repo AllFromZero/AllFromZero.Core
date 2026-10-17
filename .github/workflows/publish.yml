@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_FOLDER: 'Zero.Core'
-  PROJECT_FILE: 'Zero.Core.csproj'
+  PROJECT_FOLDER: 'AllFromZero.Core'
+  PROJECT_FILE: 'AllFromZero.Core.csproj'
   PACKAGE_OUTPUT_DIR: '${{ github.workspace }}/output'
   NUGET_SOURCE: 'https://api.nuget.org/v3/index.json'
 
@@ -65,7 +65,7 @@ jobs:
     # 🔍 验证 DLL
     - name: Verify DLL exists
       run: |
-        DLL_PATH=$(find ${{ env.PROJECT_FOLDER }}/bin/Release -name "Zero.Core.dll" -type f | head -1)
+        DLL_PATH=$(find ${{ env.PROJECT_FOLDER }}/bin/Release -name "AllFromZero.Core.dll" -type f | head -1)
         if [ -z "$DLL_PATH" ]; then
           echo "❌ DLL not found"
           find ${{ env.PROJECT_FOLDER }}/bin/Release -type f
