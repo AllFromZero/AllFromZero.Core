@@ -1,0 +1,129 @@
+name: Publish to NuGet
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+env:
+  PROJECT_FOLDER: 'Zero.Core'
+  PROJECT_FILE: 'Zero.Core.csproj'
+  PACKAGE_OUTPUT_DIR: '${{ github.workspace }}/output'
+  NUGET_SOURCE: 'https://api.nuget.org/v3/index.json'
+
+jobs:
+  build-and-publish:
+    name: Build, Pack, and Publish
+    runs-on: windows-latest
+    environment: Release
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+        include-prerelease: true
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.PROJECT_FOLDER }}/${{ env.PROJECT_FILE }}
+
+    - name: Run tests (optional)
+      run: dotnet test ${{ env.PROJECT_FOLDER }}/${{ env.PROJECT_FILE }} --no-restore --verbosity normal || true
+
+    - name: Get version from tag
+      id: get_version
+      run: |
+        VERSION=${GITHUB_REF_NAME#v}
+        echo "✅ Extracted version: $VERSION"
+        echo "VERSION=$VERSION" >> $GITHUB_ENV
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+      shell: bash
+
+    # 🔨 构建（使用完整相对路径）
+    - name: Build project
+      run: |
+        dotnet build ${{ env.PROJECT_FOLDER }}/${{ env.PROJECT_FILE }} --configuration Release --verbosity normal
+      shell: bash
+
+    # 🔍 验证 DLL
+    - name: Verify DLL exists
+      run: |
+        if exist "${{ env.PROJECT_FOLDER }}\bin\Release\net10.0-windows\Zero.Core.dll" (
+          echo "✅ DLL found"
+          dir "${{ env.PROJECT_FOLDER }}\bin\Release\net10.0-windows"
+        ) else (
+          echo "❌ DLL not found"
+          dir ${{ env.PROJECT_FOLDER }}\bin\Release || echo "No Release folder"
+          exit 1
+        )
+      shell: cmd
+
+    # 📦 打包（同样使用完整路径）
+    - name: Pack
+      run: |
+        VERSION="${{ steps.get_version.outputs.version }}"
+        echo "📦 Packing version: $VERSION"
+        dotnet pack "${{ env.PROJECT_FOLDER }}/${{ env.PROJECT_FILE }}" \
+          --configuration Release \
+          --no-build \
+          --output "${{ env.PACKAGE_OUTPUT_DIR }}" \
+          -p:PackageVersion=$VERSION \
+          -p:IncludeSymbols=true \
+          -p:SymbolPackageFormat=snupkg \
+          -p:ContinuousIntegrationBuild=true
+      shell: bash
+      
+    # ✅ 使用 PowerShell 列出目录，避免路径解析问题
+    - name: List output directory
+      run: |
+        Write-Host "=== Contents of $env:PACKAGE_OUTPUT_DIR ==="
+        Get-ChildItem -Path $env:PACKAGE_OUTPUT_DIR
+      shell: pwsh
+
+    # ✅ 使用 NuGet/login@v1 进行 OIDC 认证
+    - name: Login to NuGet.org
+      id: nuget_auth
+      uses: NuGet/login@v1
+      with:
+        user: AllFromZero
+
+    - name: Push to NuGet.org
+      run: |
+        echo "Searching for .nupkg files..."
+        NUPKG_FILE=$(find . -name "*.nupkg" -type f | head -1)
+        if [ -z "$NUPKG_FILE" ]; then
+          echo "❌ No .nupkg files found!"
+          exit 1
+        fi
+        echo "✅ Found: $NUPKG_FILE"
+        dotnet nuget push "$NUPKG_FILE" \
+          --api-key ${{ steps.nuget_auth.outputs.NUGET_API_KEY }} \
+          --source ${{ env.NUGET_SOURCE }} \
+          --skip-duplicate
+      shell: bash
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ${{ env.PACKAGE_OUTPUT_DIR }}/*.nupkg
+        generate_release_notes: true
+        prerelease: ${{ contains(github.ref_name, '-') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
