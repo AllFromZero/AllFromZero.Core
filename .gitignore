@@ -428,3 +428,4 @@ FodyWeavers.xsd
 #*.lscache
 /Test/Test.csproj
 /Test/Test.csproj
+/Test
