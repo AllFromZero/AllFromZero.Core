@@ -65,15 +65,14 @@ jobs:
     # 🔍 验证 DLL
     - name: Verify DLL exists
       run: |
-        if exist "${{ env.PROJECT_FOLDER }}\bin\Release\net10.0-windows\Zero.Core.dll" (
-          echo "✅ DLL found"
-          dir "${{ env.PROJECT_FOLDER }}\bin\Release\net10.0-windows"
-        ) else (
+        DLL_PATH=$(find ${{ env.PROJECT_FOLDER }}/bin/Release -name "Zero.Core.dll" -type f | head -1)
+        if [ -z "$DLL_PATH" ]; then
           echo "❌ DLL not found"
-          dir ${{ env.PROJECT_FOLDER }}\bin\Release || echo "No Release folder"
+          find ${{ env.PROJECT_FOLDER }}/bin/Release -type f
           exit 1
-        )
-      shell: cmd
+        fi
+        echo "✅ DLL found: $DLL_PATH"
+      shell: bash
 
     # 📦 打包（同样使用完整路径）
     - name: Pack
