@@ -24,4 +24,19 @@
     <Folder Include="Utils\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\Docs\Images\零.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -5,7 +5,8 @@ using System.ComponentModel;
 namespace AllFromZero.Core.Collections
 {
     /// <summary>
-    /// 扩展的 ObservableCollection，支持批量添加元素并只触发一次集合变更通知。
+    /// 扩展的 ObservableCollection，支持批量添加元素。
+    /// 通过将范围操作拆解为多次单元素通知，完美兼容 WPF 的 ListCollectionView。
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public class ZeroObservableCollection<T> : ObservableCollection<T>
@@ -15,40 +16,31 @@ namespace AllFromZero.Core.Collections
         /// </summary>
         private bool _suppressNotification;
 
-        /// <summary>
-        /// 构造函数
-        /// </summary>
         public ZeroObservableCollection() : base() { }
-
-        /// <summary>
-        /// 构造函数
-        /// </summary>
-        /// <param name="collection"></param>
         public ZeroObservableCollection(IEnumerable<T> collection) : base(collection) { }
-
-        /// <summary>
-        /// 构造函数
-        /// </summary>
-        /// <param name="list"></param>
         public ZeroObservableCollection(List<T> list) : base(list) { }
 
         /// <summary>
-        /// 批量添加元素，并只触发一次 CollectionChanged 通知（Reset）。
+        /// 批量添加元素。内部静默添加，然后为每个元素触发单次 Add 通知。
         /// </summary>
         /// <param name="collection">要添加的元素集合。</param>
-        /// <exception cref="ArgumentNullException">当 collection 为 null 时抛出。</exception>
         public void AddRange(IEnumerable<T> collection)
         {
             ArgumentNullException.ThrowIfNull(collection);
 
-            // 挂起通知，避免在循环添加时频繁触发 UI 更新
-            _suppressNotification = true;
+            // 转为 List 确保能获取 Count 和索引
+            var newItems = collection as IList<T> ?? [.. collection];
+            if (newItems.Count == 0) return;
 
+            // 记录添加前的起始索引
+            int startIndex = Count;
+
+            // 1. 挂起通知，内部批量添加
+            _suppressNotification = true;
             try
             {
-                foreach (var item in collection)
+                foreach (var item in newItems)
                 {
-                    // 直接操作 Items 属性，绕过 OnCollectionChanged 的单次触发
                     Items.Add(item);
                 }
             }
@@ -58,8 +50,17 @@ namespace AllFromZero.Core.Collections
                 _suppressNotification = false;
             }
 
-            // 批量添加完成后，只触发一次 Reset 通知，让 UI 整体刷新
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            // 2. 循环触发单元素的 Add 通知（WPF 仅支持单元素增量通知）
+            // 注：WPF 的虚拟化面板对快速连续的 Add 有优化，不会像 Reset 那样全量重建
+            for (int i = 0; i < newItems.Count; i++)
+            {
+                OnCollectionChanged(new NotifyCollectionChangedEventArgs(
+                    NotifyCollectionChangedAction.Add,
+                    newItems[i],
+                    startIndex + i));
+            }
+
+            // 3. 通知 UI 更新 Count 属性
             OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
             OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
         }
@@ -87,4 +88,3 @@ namespace AllFromZero.Core.Collections
         }
     }
 }
-

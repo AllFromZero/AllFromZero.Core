@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="AllFromZero.Core/AllFromZero.Core.csproj" />
+  <Project Path="Test/Test.csproj" Id="b7102b73-3c1b-46be-8007-fef8c6d5997f" />
 </Solution>
